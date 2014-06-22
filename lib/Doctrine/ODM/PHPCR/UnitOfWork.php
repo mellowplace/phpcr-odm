@@ -2642,7 +2642,7 @@ class UnitOfWork
      */
     public function checkin($document)
     {
-        $path = $this->getFullVersionedNodePath($document);
+        $path = $this->getVersionedNodePath($document);
         $vm = $this->session->getWorkspace()->getVersionManager();
         $vm->checkin($path); // Checkin Node aka make a new Version
     }
@@ -2653,7 +2653,7 @@ class UnitOfWork
      */
     public function checkout($document)
     {
-        $path = $this->getFullVersionedNodePath($document);
+        $path = $this->getVersionedNodePath($document);
         $vm = $this->session->getWorkspace()->getVersionManager();
         $vm->checkout($path);
     }
@@ -2664,7 +2664,7 @@ class UnitOfWork
      */
     public function checkpoint($document)
     {
-        $path = $this->getFullVersionedNodePath($document);
+        $path = $this->getVersionedNodePath($document);
         $vm = $this->session->getWorkspace()->getVersionManager();
         $vm->checkpoint($path);
     }
@@ -3370,16 +3370,28 @@ class UnitOfWork
         return $string;
     }
 
-    private function getFullVersionedNodePath($document)
+    private function getVersionedNodePath($document)
     {
         $path = $this->getDocumentId($document);
         $metadata = $this->dm->getClassMetadata(get_class($document));
-        if ($metadata->versionable !== 'full') {
-            throw new InvalidArgumentException(sprintf("The document at '%s' is not full versionable", $path));
+
+        if (!$metadata->versionable) {
+            throw new InvalidArgumentException(sprintf(
+                "The document at path '%s' is not versionable",
+                $path
+            ));
         }
 
         $node = $this->session->getNode($path);
-        $node->addMixin('mix:versionable');
+
+        $mixin = $metadata->versionable === 'simple' ?
+            'mix:simpleVersionable' :
+            'mix:versionable';
+
+        if (!$node->isNodeType($mixin)) {
+            $node->addMixin($mixin);
+        }
+
 
         return $path;
     }
