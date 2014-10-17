@@ -41,3 +41,4 @@ you want to run.
 3. Run the tests:
 
     phpunit -c tests/phpunit_jackrabbit.xml.dist
+
